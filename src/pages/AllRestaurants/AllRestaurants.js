@@ -1,52 +1,46 @@
 import React, { useEffect, useState } from "react";
 import classes from "./AllRestaurants.module.scss";
-import Map from "../Components/Map/Map";
+import Map from "../../Components/Map/Map";
 import { Link } from "react-router-dom";
-import ReactStars from "react-rating-stars-component";
+import { FIREBASE_DOMAIN } from "../../api";
+import RatingStars from "../../Components/RatingStars/RatingStars";
 
 const AllRestaurants = () => {
-  const ratingChanged = (newRating) => {
-    console.log(newRating);
-  };
-  const [list, setList] = useState([]);
+  const [restaurantList, setRestaurantList] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
-      const data = await fetch(
-        "https://restaurant-c196b-default-rtdb.firebaseio.com/restaurant.json"
-      );
-      const json = await data.json();
-      console.log(json);
-      const transformedRestaurantObj = [];
+      const response = await fetch(`${FIREBASE_DOMAIN}/restaurant.json`);
+      const data = await response.json();
+      const restaurantArray = [];
 
-      for (const key in json) {
-        const restaurantObjObj = {
+      for (const key in data) {
+        const restaurantObj = {
           id: key,
-          ...json[key],
+          ...data[key],
         };
 
-        transformedRestaurantObj.push(restaurantObjObj);
+        restaurantArray.push(restaurantObj);
       }
-      console.log(transformedRestaurantObj);
-      setList(transformedRestaurantObj);
+      setRestaurantList(restaurantArray);
     };
     fetchData().catch();
   }, []);
-  console.log("list =", list);
+
   const locationData = [];
-  for (const key in list) {
+
+  for (const key in restaurantList) {
     const locationObj = {
-      desc: list[key].desc,
-      ...list[key].location,
+      desc: restaurantList[key].desc,
+      ...restaurantList[key].location,
     };
 
     locationData.push(locationObj);
   }
 
-  console.log("locationData", locationData);
   return (
     <div className={classes.Container}>
       <div className={classes.RestaurantWrapper}>
-        {list
+        {restaurantList
           .sort((a, b) => (a.rating > b.rating ? 1 : -1))
           .map((elem) => {
             return (
@@ -63,20 +57,11 @@ const AllRestaurants = () => {
                 >
                   View Restaurant
                 </Link>
-                <ReactStars
-                  count={elem.rating ? elem.rating : 5}
-                  onChange={ratingChanged}
-                  size={24}
-                  isHalf={true}
-                  halfIcon={<i className="fa fa-star-half-alt"></i>}
-                  fullIcon={<i className="fa fa-star"></i>}
-                  activeColor="#ffd700"
-                />
+                <RatingStars rating={elem.rating} edit={false} size={24} />
               </div>
             );
           })}
       </div>
-
       <Map locations={locationData} desc={locationData.desc} />
     </div>
   );

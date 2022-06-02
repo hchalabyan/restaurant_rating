@@ -1,12 +1,28 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import classes from "./RatingPage.module.scss";
-import ReactStars from "react-rating-stars-component";
+import RatingStars from "../../Components/RatingStars/RatingStars";
 
 const RatingPage = () => {
   const [info, setInfo] = useState(null);
   const [name, setName] = useState(null);
   const textInputRef = useRef();
+  const params = useParams();
+
+  useEffect(() => {
+    const fetchData = async (id) => {
+      const response = await fetch(
+        `https://restaurant-c196b-default-rtdb.firebaseio.com/restaurant/${params.id}.json`
+      );
+      const data = await response.json();
+      const detailsInfo = data.desc;
+      const detailsName = data.name;
+      setInfo(detailsInfo);
+      setName(detailsName);
+    };
+
+    fetchData().catch();
+  }, []);
 
   const ratingChanged = (newRating) => {
     const sendRating = async (ratingData) => {
@@ -22,10 +38,6 @@ const RatingPage = () => {
         }
       );
       const data = await response.json();
-      for (const key in data) {
-        console.log(data);
-      }
-      console.log(data);
 
       if (!response.ok) {
         throw new Error(data.message || "Could not create rating.");
@@ -36,6 +48,7 @@ const RatingPage = () => {
     sendRating().catch();
     console.log(newRating);
   };
+
   function submitFormHandler(event) {
     event.preventDefault();
 
@@ -53,17 +66,9 @@ const RatingPage = () => {
           },
         }
       );
+
       const data = await response.json();
-      const ratingArray = [];
-      for (const key in data) {
-        console.log(data);
-        const ratingArrayObj = {
-          id: key,
-          ...data[key],
-        };
-        ratingArray.push(ratingArrayObj);
-      }
-      console.log(ratingArray);
+
       if (!response.ok) {
         throw new Error(data.message || "Could not create review.");
       }
@@ -73,22 +78,7 @@ const RatingPage = () => {
     sendReview().catch();
     textInputRef.current.value = "";
   }
-  const clearDataHandler = () => {};
-  const params = useParams();
-  useEffect(() => {
-    const fetchData = async (id) => {
-      const data = await fetch(
-        `https://restaurant-c196b-default-rtdb.firebaseio.com/restaurant/${params.id}.json`
-      );
-      const json = await data.json();
-      const detailsInfo = json.desc;
-      const detailsName = json.name;
-      setInfo(detailsInfo);
-      setName(detailsName);
-    };
 
-    fetchData().catch();
-  }, []);
   return (
     <div className={classes.Rating}>
       <p className={classes.Title}>{name}</p>
@@ -97,19 +87,14 @@ const RatingPage = () => {
         <form onSubmit={submitFormHandler}>
           <label htmlFor="text">Leave Review</label>
           <textarea id="text" rows="7" ref={textInputRef} />
-          <ReactStars
-            count={5}
-            onChange={ratingChanged}
-            size={32}
-            isHalf={true}
-            halfIcon={<i className="fa fa-star-half-alt"></i>}
-            fullIcon={<i className="fa fa-star"></i>}
-            activeColor="#ffd700"
+          <RatingStars
+            handleOnchange={ratingChanged}
+            rating={5}
+            edit
+            size={30}
           />
           <div className={classes.Actions}>
-            <button onClick={clearDataHandler} className="btn">
-              Add Review
-            </button>
+            <button className="btn">Add Review</button>
           </div>
         </form>
       </div>
